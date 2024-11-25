@@ -6,9 +6,7 @@ use mctk_core::types::AssetParams;
 use mctk_core::types::PixelSize;
 use mctk_core::ui::UI;
 use pointer::{MouseEvent, ScrollDelta};
-use raw_window_handle::{
-    HasRawDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
-};
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle};
 use smithay_client_toolkit::reexports::calloop::channel::{Channel, Event, Sender};
 use smithay_client_toolkit::reexports::calloop::{self, EventLoop};
 use std::any::Any;
@@ -23,19 +21,19 @@ use crate::{
 
 use super::xdg_surface::XdgShellSctkWindow;
 
-pub struct XdgWindow {
+pub struct XdgWindow<'a> {
     width: u32,
     height: u32,
     scale_factor: f32,
-    handle: Option<RawWaylandHandle>,
-    window_tx: Sender<WindowMessage>,
+    handle: Option<RawWaylandHandle<'a>>,
+    window_tx: Sender<WindowMessage<'a>>,
     fonts: cosmic_text::fontdb::Database,
     assets: HashMap<String, AssetParams>,
     svgs: HashMap<String, String>,
     xdg_window_tx: Option<Sender<XdgWindowMessage>>,
 }
-unsafe impl Send for XdgWindow {}
-unsafe impl Sync for XdgWindow {}
+unsafe impl Send for XdgWindow<'_> {}
+unsafe impl Sync for XdgWindow<'_> {}
 
 #[derive(Default)]
 pub struct XdgWindowParams {
@@ -51,14 +49,14 @@ pub struct XdgWindowParams {
 #[derive(Debug)]
 pub enum XdgWindowMessage {}
 
-impl XdgWindow {
+impl XdgWindow<'_> {
     pub fn open_blocking<A, B>(
         params: XdgWindowParams,
         app_params: B,
     ) -> (
-        XdgShellSctkWindow,
-        EventLoop<'static, XdgShellSctkWindow>,
-        Sender<WindowMessage>,
+        XdgShellSctkWindow<'static>,
+        EventLoop<'static, XdgShellSctkWindow<'static>>,
+        Sender<WindowMessage<'static>>,
     )
     where
         A: 'static + RootComponent<B> + Component + Default + Send + Sync,
@@ -267,7 +265,7 @@ impl XdgWindow {
     }
 }
 
-impl mctk_core::window::Window for XdgWindow {
+impl mctk_core::window::Window for XdgWindow<'static> {
     fn logical_size(&self) -> PixelSize {
         PixelSize {
             width: self.width,
@@ -328,14 +326,18 @@ impl mctk_core::window::Window for XdgWindow {
     }
 }
 
-unsafe impl HasRawWindowHandle for XdgWindow {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        self.handle.unwrap().raw_window_handle()
+impl HasWindowHandle for XdgWindow<'_> {
+    fn window_handle(
+        &self,
+    ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError> {
+        self.handle.unwrap().window_handle()
     }
 }
 
-unsafe impl HasRawDisplayHandle for XdgWindow {
-    fn raw_display_handle(&self) -> RawDisplayHandle {
-        self.handle.unwrap().raw_display_handle()
+impl HasDisplayHandle for XdgWindow<'_> {
+    fn display_handle(
+        &self,
+    ) -> Result<raw_window_handle::DisplayHandle<'_>, raw_window_handle::HandleError> {
+        self.handle.unwrap().display_handle()
     }
 }

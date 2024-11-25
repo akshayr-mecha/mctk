@@ -10,7 +10,8 @@ use ahash::AHashMap;
 use anyhow::Context;
 use mctk_core::raw_handle::RawWaylandHandle;
 use raw_window_handle::{
-    RawDisplayHandle, RawWindowHandle, WaylandDisplayHandle, WaylandWindowHandle,
+    DisplayHandle, RawDisplayHandle, RawWindowHandle, WaylandDisplayHandle, WaylandWindowHandle,
+    WindowHandle,
 };
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState},
@@ -58,9 +59,9 @@ use wayland_client::{
     Dispatch,
 };
 
-pub struct SessionLockSctkWindow {
+pub struct SessionLockSctkWindow<'a> {
     conn: Connection,
-    window_tx: Sender<WindowMessage>,
+    window_tx: Sender<WindowMessage<'a>>,
     registry_state: RegistryState,
     seat_state: SeatState,
     output_state: OutputState,
@@ -72,7 +73,7 @@ pub struct SessionLockSctkWindow {
     keyboard_modifiers: Modifiers,
     pointer: Option<wl_pointer::WlPointer>,
     initial_configure_sent: bool,
-    pub wayland_handle: RawWaylandHandle,
+    pub wayland_handle: RawWaylandHandle<'a>,
     pub scale_factor: f32,
     wl_display: WlDisplay,
     wl_surface: WlSurface,
@@ -82,10 +83,10 @@ pub struct SessionLockSctkWindow {
     // session_lock_manager: ExtSessionLockManagerV1,
     pub session_lock: ExtSessionLockV1,
     // session_lock_surface: ExtSessionLockSurfaceV1,
-    queue_handle: QueueHandle<SessionLockSctkWindow>,
+    queue_handle: QueueHandle<SessionLockSctkWindow<'a>>,
 }
 
-impl SessionLockSctkWindow {
+impl SessionLockSctkWindow<'_> {
     pub fn new(
         window_tx: Sender<WindowMessage>,
         window_opts: WindowOptions,
@@ -132,15 +133,32 @@ impl SessionLockSctkWindow {
 
         // create wayland handle
         let wayland_handle = {
-            let mut handle = WaylandDisplayHandle::empty();
-            handle.display = conn.backend().display_ptr() as *mut _;
+            let dislay_ptr = conn.backend().display_ptr();
+            let display = std::ptr::NonNull::new(dislay_ptr as *mut _)
+                .expect("wl_display should never be null");
+            let mut handle = WaylandDisplayHandle::new(display);
             let display_handle = RawDisplayHandle::Wayland(handle);
 
-            let mut handle = WaylandWindowHandle::empty();
-            handle.surface = wl_surface.id().as_ptr() as *mut _;
+            let surface_ptr = wl_surface.id().as_ptr();
+            let surface = std::ptr::NonNull::new(surface_ptr as *mut _)
+                .expect("wl_surface should never be null");
+            let mut handle = WaylandWindowHandle::new(surface);
             let window_handle = RawWindowHandle::Wayland(handle);
 
-            RawWaylandHandle(display_handle, window_handle)
+            RawWaylandHandle(
+                unsafe { DisplayHandle::borrow_raw(display_handle.into()) },
+                unsafe { WindowHandle::borrow_raw(window_handle.into()) },
+            )
+
+            // let mut handle = WaylandDisplayHandle::empty();
+            // handle.display = conn.backend().display_ptr() as *mut _;
+            // let display_handle = RawDisplayHandle::Wayland(handle);
+
+            // let mut handle = WaylandWindowHandle::empty();
+            // handle.surface = wl_surface.id().as_ptr() as *mut _;
+            // let window_handle = RawWindowHandle::Wayland(handle);
+
+            // RawWaylandHandle(display_handle, window_handle)
         };
 
         // insert source for session_lock_rx messages
@@ -243,7 +261,7 @@ impl SessionLockSctkWindow {
     }
 }
 
-impl CompositorHandler for SessionLockSctkWindow {
+impl CompositorHandler for SessionLockSctkWindow<'_> {
     fn scale_factor_changed(
         &mut self,
         _conn: &Connection,
@@ -278,7 +296,7 @@ impl CompositorHandler for SessionLockSctkWindow {
     }
 }
 
-impl OutputHandler for SessionLockSctkWindow {
+impl OutputHandler for SessionLockSctkWindow<'_> {
     fn output_state(&mut self) -> &mut OutputState {
         &mut self.output_state
     }
@@ -290,7 +308,7 @@ impl OutputHandler for SessionLockSctkWindow {
     fn output_destroyed(&mut self, _: &Connection, _: &QueueHandle<Self>, _: WlOutput) {}
 }
 
-impl SeatHandler for SessionLockSctkWindow {
+impl SeatHandler for SessionLockSctkWindow<'_> {
     fn seat_state(&mut self) -> &mut SeatState {
         &mut self.seat_state
     }
@@ -340,7 +358,7 @@ impl SeatHandler for SessionLockSctkWindow {
     fn remove_seat(&mut self, _conn: &Connection, _qh: &QueueHandle<Self>, _seat: WlSeat) {}
 }
 
-impl KeyboardHandler for SessionLockSctkWindow {
+impl KeyboardHandler for SessionLockSctkWindow<'_> {
     fn enter(
         &mut self,
         _conn: &Connection,
@@ -418,7 +436,7 @@ impl KeyboardHandler for SessionLockSctkWindow {
     }
 }
 
-impl PointerHandler for SessionLockSctkWindow {
+impl PointerHandler for SessionLockSctkWindow<'_> {
     fn pointer_frame(
         &mut self,
         _conn: &Connection,
@@ -489,7 +507,7 @@ impl PointerHandler for SessionLockSctkWindow {
     }
 }
 
-impl TouchHandler for SessionLockSctkWindow {
+impl TouchHandler for SessionLockSctkWindow<'_> {
     fn down(
         &mut self,
         _: &Connection,
@@ -619,7 +637,7 @@ impl TouchHandler for SessionLockSctkWindow {
     }
 }
 
-impl ProvidesRegistryState for SessionLockSctkWindow {
+impl ProvidesRegistryState for SessionLockSctkWindow<'_> {
     fn registry(&mut self) -> &mut RegistryState {
         &mut self.registry_state
     }
@@ -627,16 +645,16 @@ impl ProvidesRegistryState for SessionLockSctkWindow {
     registry_handlers!(OutputState, SeatState);
 }
 
-delegate_compositor!(SessionLockSctkWindow);
-delegate_output!(SessionLockSctkWindow);
-delegate_seat!(SessionLockSctkWindow);
-delegate_keyboard!(SessionLockSctkWindow);
-delegate_pointer!(SessionLockSctkWindow);
-delegate_touch!(SessionLockSctkWindow);
-delegate_registry!(SessionLockSctkWindow);
+delegate_compositor!(SessionLockSctkWindow<'_>);
+delegate_output!(SessionLockSctkWindow<'_>);
+delegate_seat!(SessionLockSctkWindow<'_>);
+delegate_keyboard!(SessionLockSctkWindow<'_>);
+delegate_pointer!(SessionLockSctkWindow<'_>);
+delegate_touch!(SessionLockSctkWindow<'_>);
+delegate_registry!(SessionLockSctkWindow<'_>);
 
 /* Session Lock binds */
-impl Dispatch<ExtSessionLockManagerV1, ()> for SessionLockSctkWindow {
+impl Dispatch<ExtSessionLockManagerV1, ()> for SessionLockSctkWindow<'_> {
     fn event(
         _: &mut Self,
         _: &ExtSessionLockManagerV1,
@@ -648,7 +666,7 @@ impl Dispatch<ExtSessionLockManagerV1, ()> for SessionLockSctkWindow {
     }
 }
 
-impl Dispatch<ExtSessionLockV1, ()> for SessionLockSctkWindow {
+impl Dispatch<ExtSessionLockV1, ()> for SessionLockSctkWindow<'_> {
     fn event(
         _: &mut Self,
         _: &ExtSessionLockV1,
@@ -665,7 +683,7 @@ impl Dispatch<ExtSessionLockV1, ()> for SessionLockSctkWindow {
     }
 }
 
-impl Dispatch<ExtSessionLockSurfaceV1, ()> for SessionLockSctkWindow {
+impl Dispatch<ExtSessionLockSurfaceV1, ()> for SessionLockSctkWindow<'_> {
     fn event(
         state: &mut Self,
         surface: &ExtSessionLockSurfaceV1,

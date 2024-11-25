@@ -3,13 +3,17 @@ pub mod layer_shell;
 pub mod session_lock;
 pub mod xdg_shell;
 
+use std::os::raw::c_void;
+use std::ptr::NonNull;
+
 use input::keyboard::KeyboardEvent;
 use input::pointer::MouseEvent;
 use input::touch::TouchEvent;
 use mctk_core::component;
 use mctk_core::raw_handle::RawWaylandHandle;
 use raw_window_handle::{
-    RawDisplayHandle, RawWindowHandle, WaylandDisplayHandle, WaylandWindowHandle,
+    DisplayHandle, RawDisplayHandle, RawWindowHandle, WaylandDisplayHandle, WaylandWindowHandle,
+    WindowHandle,
 };
 use wayland_client::protocol::wl_display::WlDisplay;
 use wayland_client::protocol::wl_surface::WlSurface;
@@ -35,11 +39,11 @@ pub struct WindowInfo {
 }
 
 #[derive(Debug)]
-pub enum WindowMessage {
+pub enum WindowMessage<'a> {
     Configure {
         width: u32,
         height: u32,
-        wayland_handle: RawWaylandHandle,
+        wayland_handle: RawWaylandHandle<'a>,
     },
     CompositorFrame,
     MainEventsCleared,
@@ -56,7 +60,7 @@ pub enum WindowMessage {
         event: WindowEvent,
     },
 }
-unsafe impl Send for WindowMessage {}
+unsafe impl Send for WindowMessage<'_> {}
 #[derive(Debug, Copy, Clone)]
 pub enum WindowEvent {
     CloseRequested,
@@ -67,17 +71,27 @@ pub enum WindowEvent {
     Touch(TouchEvent),
 }
 
-pub fn new_raw_wayland_handle(wl_display: &WlDisplay, wl_surface: &WlSurface) -> RawWaylandHandle {
+pub fn new_raw_wayland_handle<'a>(
+    wl_display: &WlDisplay,
+    wl_surface: &WlSurface,
+) -> RawWaylandHandle<'a> {
     let wayland_handle = {
-        let mut handle = WaylandDisplayHandle::empty();
-        handle.display = wl_display.id().as_ptr() as *mut _;
+        let dislay_ptr = wl_display.id().as_ptr();
+        let display =
+            std::ptr::NonNull::new(dislay_ptr as *mut _).expect("wl_display should never be null");
+        let mut handle = WaylandDisplayHandle::new(display);
         let display_handle = RawDisplayHandle::Wayland(handle);
 
-        let mut handle = WaylandWindowHandle::empty();
-        handle.surface = wl_surface.id().as_ptr() as *mut _;
+        let surface_ptr = wl_surface.id().as_ptr();
+        let surface =
+            std::ptr::NonNull::new(surface_ptr as *mut _).expect("wl_surface should never be null");
+        let mut handle = WaylandWindowHandle::new(surface);
         let window_handle = RawWindowHandle::Wayland(handle);
 
-        RawWaylandHandle(display_handle, window_handle)
+        RawWaylandHandle(
+            unsafe { DisplayHandle::borrow_raw(display_handle.into()) },
+            unsafe { WindowHandle::borrow_raw(window_handle.into()) },
+        )
     };
     wayland_handle
 }

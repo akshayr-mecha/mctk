@@ -3,11 +3,11 @@ use crate::{
     types::{Data, PixelSize},
     AssetParams,
 };
-use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use std::{any::Any, collections::HashMap};
 
 /// The trait that backends must implement. An instance is returned by [`current_window`][crate::current_window] so that an app may interact with the OS's windowing system.
-pub trait Window: HasRawWindowHandle + HasRawDisplayHandle + Send + Sync + Any {
+pub trait Window: HasWindowHandle + HasDisplayHandle + Send + Sync + Any {
     /// Logical size of the window. Probably only useful internally.
     fn logical_size(&self) -> PixelSize;
 

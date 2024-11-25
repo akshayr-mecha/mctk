@@ -58,9 +58,9 @@ use wayland_client::protocol::{
 
 use super::xdg_window::XdgWindowMessage;
 
-pub struct XdgShellSctkWindow {
-    queue_handle: QueueHandle<XdgShellSctkWindow>,
-    window_tx: Sender<WindowMessage>,
+pub struct XdgShellSctkWindow<'a> {
+    queue_handle: QueueHandle<XdgShellSctkWindow<'a>>,
+    window_tx: Sender<WindowMessage<'a>>,
     wl_display: WlDisplay,
     registry_state: RegistryState,
     seat_state: SeatState,
@@ -80,7 +80,7 @@ pub struct XdgShellSctkWindow {
     pub scale_factor: f32,
 }
 
-impl XdgShellSctkWindow {
+impl XdgShellSctkWindow<'_> {
     pub fn new(
         window_tx: Sender<WindowMessage>,
         window_opts: WindowOptions,
@@ -230,7 +230,7 @@ impl XdgShellSctkWindow {
     }
 }
 
-impl CompositorHandler for XdgShellSctkWindow {
+impl CompositorHandler for XdgShellSctkWindow<'_> {
     fn scale_factor_changed(
         &mut self,
         _conn: &Connection,
@@ -265,7 +265,7 @@ impl CompositorHandler for XdgShellSctkWindow {
     }
 }
 
-impl OutputHandler for XdgShellSctkWindow {
+impl OutputHandler for XdgShellSctkWindow<'_> {
     fn output_state(&mut self) -> &mut OutputState {
         &mut self.output_state
     }
@@ -277,7 +277,7 @@ impl OutputHandler for XdgShellSctkWindow {
     fn output_destroyed(&mut self, _: &Connection, _: &QueueHandle<Self>, _: WlOutput) {}
 }
 
-impl WindowHandler for XdgShellSctkWindow {
+impl WindowHandler for XdgShellSctkWindow<'_> {
     fn request_close(&mut self, _: &Connection, _: &QueueHandle<Self>, _: &Window) {
         let _ = self.send_close_requested();
     }
@@ -303,7 +303,7 @@ impl WindowHandler for XdgShellSctkWindow {
     }
 }
 
-impl ActivationHandler for XdgShellSctkWindow {
+impl ActivationHandler for XdgShellSctkWindow<'_> {
     type RequestData = RequestData;
 
     fn new_token(&mut self, token: String, _data: &Self::RequestData) {
@@ -314,7 +314,7 @@ impl ActivationHandler for XdgShellSctkWindow {
     }
 }
 
-impl SeatHandler for XdgShellSctkWindow {
+impl SeatHandler for XdgShellSctkWindow<'_> {
     fn seat_state(&mut self) -> &mut SeatState {
         &mut self.seat_state
     }
@@ -364,7 +364,7 @@ impl SeatHandler for XdgShellSctkWindow {
     fn remove_seat(&mut self, _conn: &Connection, _qh: &QueueHandle<Self>, _seat: WlSeat) {}
 }
 
-impl KeyboardHandler for XdgShellSctkWindow {
+impl KeyboardHandler for XdgShellSctkWindow<'_> {
     fn enter(
         &mut self,
         _conn: &Connection,
@@ -442,7 +442,7 @@ impl KeyboardHandler for XdgShellSctkWindow {
     }
 }
 
-impl PointerHandler for XdgShellSctkWindow {
+impl PointerHandler for XdgShellSctkWindow<'_> {
     fn pointer_frame(
         &mut self,
         _conn: &Connection,
@@ -513,7 +513,7 @@ impl PointerHandler for XdgShellSctkWindow {
     }
 }
 
-impl TouchHandler for XdgShellSctkWindow {
+impl TouchHandler for XdgShellSctkWindow<'_> {
     fn down(
         &mut self,
         _: &Connection,
@@ -643,7 +643,7 @@ impl TouchHandler for XdgShellSctkWindow {
     }
 }
 
-impl ProvidesRegistryState for XdgShellSctkWindow {
+impl ProvidesRegistryState for XdgShellSctkWindow<'_> {
     fn registry(&mut self) -> &mut RegistryState {
         &mut self.registry_state
     }
@@ -651,13 +651,13 @@ impl ProvidesRegistryState for XdgShellSctkWindow {
     registry_handlers!(OutputState, SeatState);
 }
 
-delegate_compositor!(XdgShellSctkWindow);
-delegate_output!(XdgShellSctkWindow);
-delegate_seat!(XdgShellSctkWindow);
-delegate_keyboard!(XdgShellSctkWindow);
-delegate_pointer!(XdgShellSctkWindow);
-delegate_touch!(XdgShellSctkWindow);
-delegate_xdg_shell!(XdgShellSctkWindow);
-delegate_xdg_window!(XdgShellSctkWindow);
-delegate_activation!(XdgShellSctkWindow);
-delegate_registry!(XdgShellSctkWindow);
+delegate_compositor!(XdgShellSctkWindow<'_>);
+delegate_output!(XdgShellSctkWindow<'_>);
+delegate_seat!(XdgShellSctkWindow<'_>);
+delegate_keyboard!(XdgShellSctkWindow<'_>);
+delegate_pointer!(XdgShellSctkWindow<'_>);
+delegate_touch!(XdgShellSctkWindow<'_>);
+delegate_xdg_shell!(XdgShellSctkWindow<'_>);
+delegate_xdg_window!(XdgShellSctkWindow<'_>);
+delegate_activation!(XdgShellSctkWindow<'_>);
+delegate_registry!(XdgShellSctkWindow<'_>);

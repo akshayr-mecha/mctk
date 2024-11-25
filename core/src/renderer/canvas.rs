@@ -11,7 +11,7 @@ use femtovg::{Canvas, Color, ImageFlags, ImageId, ImageSource};
 use glutin::api::egl;
 use glutin::api::egl::context::PossiblyCurrentContext;
 use glutin::api::egl::surface::Surface;
-use glutin::context::{PossiblyCurrentContextGlSurfaceAccessor, PossiblyCurrentGlContext};
+use glutin::context::PossiblyCurrentGlContext;
 use glutin::surface::{GlSurface, WindowSurface};
 use image::DynamicImage;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};

@@ -51,10 +51,10 @@ use wayland_client::protocol::{
     wl_touch::{self, WlTouch},
 };
 
-pub struct LayerShellSctkWindow {
+pub struct LayerShellSctkWindow<'a> {
     // conn: Connection,
-    queue_handle: QueueHandle<LayerShellSctkWindow>,
-    window_tx: Sender<WindowMessage>,
+    queue_handle: QueueHandle<LayerShellSctkWindow<'a>>,
+    window_tx: Sender<WindowMessage<'a>>,
     wl_display: WlDisplay,
     registry_state: RegistryState,
     seat_state: SeatState,
@@ -95,7 +95,7 @@ impl Default for LayerOptions {
     }
 }
 
-impl LayerShellSctkWindow {
+impl<'a> LayerShellSctkWindow<'a> {
     pub fn new(
         window_tx: Sender<WindowMessage>,
         window_opts: WindowOptions,
@@ -257,7 +257,7 @@ impl LayerShellSctkWindow {
     }
 }
 
-impl CompositorHandler for LayerShellSctkWindow {
+impl CompositorHandler for LayerShellSctkWindow<'_> {
     fn scale_factor_changed(
         &mut self,
         _conn: &Connection,
@@ -293,7 +293,7 @@ impl CompositorHandler for LayerShellSctkWindow {
     }
 }
 
-impl OutputHandler for LayerShellSctkWindow {
+impl OutputHandler for LayerShellSctkWindow<'_> {
     fn output_state(&mut self) -> &mut OutputState {
         &mut self.output_state
     }
@@ -305,7 +305,7 @@ impl OutputHandler for LayerShellSctkWindow {
     fn output_destroyed(&mut self, _: &Connection, _: &QueueHandle<Self>, _: WlOutput) {}
 }
 
-impl LayerShellHandler for LayerShellSctkWindow {
+impl LayerShellHandler for LayerShellSctkWindow<'_> {
     fn closed(
         &mut self,
         _conn: &Connection,
@@ -337,7 +337,7 @@ impl LayerShellHandler for LayerShellSctkWindow {
     }
 }
 
-impl SeatHandler for LayerShellSctkWindow {
+impl SeatHandler for LayerShellSctkWindow<'_> {
     fn seat_state(&mut self) -> &mut SeatState {
         &mut self.seat_state
     }
@@ -387,7 +387,7 @@ impl SeatHandler for LayerShellSctkWindow {
     fn remove_seat(&mut self, _conn: &Connection, _qh: &QueueHandle<Self>, _seat: WlSeat) {}
 }
 
-impl KeyboardHandler for LayerShellSctkWindow {
+impl KeyboardHandler for LayerShellSctkWindow<'_> {
     fn enter(
         &mut self,
         _conn: &Connection,
@@ -465,7 +465,7 @@ impl KeyboardHandler for LayerShellSctkWindow {
     }
 }
 
-impl PointerHandler for LayerShellSctkWindow {
+impl PointerHandler for LayerShellSctkWindow<'_> {
     fn pointer_frame(
         &mut self,
         _conn: &Connection,
@@ -536,7 +536,7 @@ impl PointerHandler for LayerShellSctkWindow {
     }
 }
 
-impl TouchHandler for LayerShellSctkWindow {
+impl TouchHandler for LayerShellSctkWindow<'_> {
     fn down(
         &mut self,
         _: &Connection,
@@ -666,7 +666,7 @@ impl TouchHandler for LayerShellSctkWindow {
     }
 }
 
-impl ProvidesRegistryState for LayerShellSctkWindow {
+impl ProvidesRegistryState for LayerShellSctkWindow<'_> {
     fn registry(&mut self) -> &mut RegistryState {
         &mut self.registry_state
     }
@@ -674,11 +674,11 @@ impl ProvidesRegistryState for LayerShellSctkWindow {
     registry_handlers!(OutputState, SeatState);
 }
 
-delegate_compositor!(LayerShellSctkWindow);
-delegate_output!(LayerShellSctkWindow);
-delegate_seat!(LayerShellSctkWindow);
-delegate_keyboard!(LayerShellSctkWindow);
-delegate_pointer!(LayerShellSctkWindow);
-delegate_touch!(LayerShellSctkWindow);
-delegate_layer!(LayerShellSctkWindow);
-delegate_registry!(LayerShellSctkWindow);
+delegate_compositor!(LayerShellSctkWindow<'_>);
+delegate_output!(LayerShellSctkWindow<'_>);
+delegate_seat!(LayerShellSctkWindow<'_>);
+delegate_keyboard!(LayerShellSctkWindow<'_>);
+delegate_pointer!(LayerShellSctkWindow<'_>);
+delegate_touch!(LayerShellSctkWindow<'_>);
+delegate_layer!(LayerShellSctkWindow<'_>);
+delegate_registry!(LayerShellSctkWindow<'_>);

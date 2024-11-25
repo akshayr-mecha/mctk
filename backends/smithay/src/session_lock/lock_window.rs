@@ -6,7 +6,7 @@ use mctk_core::types::{AssetParams, PixelSize};
 use mctk_core::ui::UI;
 use pointer::{MouseEvent, ScrollDelta};
 use raw_window_handle::{
-    HasRawDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
+    HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle, WindowHandle,
 };
 use smithay_client_toolkit::reexports::calloop::channel::{Channel, Event, Sender};
 use smithay_client_toolkit::reexports::calloop::{self, EventLoop};
@@ -18,19 +18,19 @@ use crate::input::touch::TouchEvent;
 use crate::session_lock::lock_surface::SessionLockSctkWindow;
 use crate::{input::pointer, WindowEvent, WindowMessage, WindowOptions};
 
-pub struct SessionLockWindow {
+pub struct SessionLockWindow<'a> {
     width: u32,
     height: u32,
     scale_factor: f32,
-    handle: Option<RawWaylandHandle>,
-    window_tx: Sender<WindowMessage>,
+    handle: Option<RawWaylandHandle<'a>>,
+    window_tx: Sender<WindowMessage<'a>>,
     fonts: cosmic_text::fontdb::Database,
     assets: HashMap<String, AssetParams>,
     svgs: HashMap<String, String>,
     session_lock_tx: Sender<SessionLockMessage>,
 }
-unsafe impl Send for SessionLockWindow {}
-unsafe impl Sync for SessionLockWindow {}
+unsafe impl Send for SessionLockWindow<'_> {}
+unsafe impl Sync for SessionLockWindow<'_> {}
 
 #[derive(Debug)]
 pub enum SessionLockMessage {
@@ -46,14 +46,14 @@ pub struct SessionLockWindowParams {
     pub session_lock_rx: Channel<SessionLockMessage>,
 }
 
-impl SessionLockWindow {
+impl SessionLockWindow<'_> {
     pub fn open_blocking<A, B>(
         params: SessionLockWindowParams,
         app_params: B,
     ) -> (
-        SessionLockSctkWindow,
-        EventLoop<'static, SessionLockSctkWindow>,
-        Sender<WindowMessage>,
+        SessionLockSctkWindow<'static>,
+        EventLoop<'static, SessionLockSctkWindow<'static>>,
+        Sender<WindowMessage<'static>>,
     )
     where
         A: 'static + RootComponent<B> + Component + Default + Send + Sync,
@@ -255,7 +255,7 @@ impl SessionLockWindow {
     }
 }
 
-impl mctk_core::window::Window for SessionLockWindow {
+impl mctk_core::window::Window for SessionLockWindow<'static> {
     fn logical_size(&self) -> PixelSize {
         PixelSize {
             width: self.width,
@@ -316,14 +316,16 @@ impl mctk_core::window::Window for SessionLockWindow {
     }
 }
 
-unsafe impl HasRawWindowHandle for SessionLockWindow {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        self.handle.unwrap().raw_window_handle()
+impl HasWindowHandle for SessionLockWindow<'_> {
+    fn window_handle(&self) -> Result<WindowHandle<'_>, raw_window_handle::HandleError> {
+        self.handle.unwrap().window_handle()
     }
 }
 
-unsafe impl HasRawDisplayHandle for SessionLockWindow {
-    fn raw_display_handle(&self) -> RawDisplayHandle {
-        self.handle.unwrap().raw_display_handle()
+impl HasDisplayHandle for SessionLockWindow<'_> {
+    fn display_handle(
+        &self,
+    ) -> Result<raw_window_handle::DisplayHandle<'_>, raw_window_handle::HandleError> {
+        self.handle.unwrap().display_handle()
     }
 }

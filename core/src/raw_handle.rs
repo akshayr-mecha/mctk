@@ -1,23 +1,26 @@
 use raw_window_handle::{
-    HasRawDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
+    DisplayHandle, HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle,
+    WindowHandle,
 };
 
 #[derive(Debug, Clone, Copy)]
-pub struct RawWaylandHandle(pub RawDisplayHandle, pub RawWindowHandle);
+pub struct RawWaylandHandle<'a>(pub DisplayHandle<'a>, pub WindowHandle<'a>);
 
-unsafe impl HasRawDisplayHandle for RawWaylandHandle {
-    fn raw_display_handle(&self) -> RawDisplayHandle {
-        self.0
+impl<'a> HasDisplayHandle for RawWaylandHandle<'a> {
+    fn display_handle(&self) -> Result<DisplayHandle<'_>, raw_window_handle::HandleError> {
+        Ok(self.0)
     }
 }
 
-unsafe impl HasRawWindowHandle for RawWaylandHandle {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        self.1
+impl<'a> HasWindowHandle for RawWaylandHandle<'a> {
+    fn window_handle(
+        &self,
+    ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError> {
+        Ok(self.1)
     }
 }
 
 // This is safe because for wayland we can pass handles between threads
 // ref: https://github.com/rust-windowing/raw-window-handle/issues/85
-unsafe impl Send for RawWaylandHandle {}
-unsafe impl Sync for RawWaylandHandle {}
+unsafe impl<'a> Send for RawWaylandHandle<'a> {}
+unsafe impl<'a> Sync for RawWaylandHandle<'a> {}

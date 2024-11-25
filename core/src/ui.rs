@@ -9,7 +9,9 @@ use crate::renderer::Renderer;
 use crate::{component::Component, node::Node, types::PixelSize};
 use crate::{lay, node::Registration, size, types::*, window::Window};
 use crossbeam_channel::{unbounded, Receiver, Sender};
-use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+use raw_window_handle::{
+    HasDisplayHandle, HasRawDisplayHandle, HasRawWindowHandle, HasWindowHandle,
+};
 use std::any::Any;
 use std::collections::HashMap;
 use std::{
@@ -293,11 +295,14 @@ impl<
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        let mut window = self.window.write().unwrap();
-        let wayland_handle =
-            RawWaylandHandle(window.raw_display_handle(), window.raw_window_handle());
+        let window = self.window.read().unwrap();
+        let wayland_handle = RawWaylandHandle(
+            window.display_handle().unwrap(),
+            window.window_handle().unwrap(),
+        );
         let assets = window.assets();
 
+        let mut window = self.window.write().unwrap();
         // update the size for window, ui
         window.set_size(width, height);
         self.logical_size = Arc::new(RwLock::new(window.logical_size()));
@@ -372,55 +377,54 @@ impl<
         let height = size.height;
 
         thread::spawn(move || {
-            // let scale_factor = window.scale_factor();
-            // let size = window.logical_size();
-            let raw_window_handle = raw_wayland_handle.raw_window_handle();
-            let raw_display_handle = raw_wayland_handle.raw_display_handle();
+            // // let scale_factor = window.scale_factor();
+            // // let size = window.logical_size();
+            // let raw_window_handle = raw_wayland_handle.window_handle().unwrap().as_raw();
+            // let raw_display_handle = raw_wayland_handle.display_handle().unwrap().as_raw();
+            // let (gl_display, gl_surface, gl_context) =
+            //     gl::init_gl(raw_display_handle, raw_window_handle, (width, height));
+            // let mut gl_canvas =
+            //     gl::init_gl_canvas(&gl_display, (width, height), *scale_factor.read().unwrap());
 
-            let (gl_display, gl_surface, gl_context) =
-                gl::init_gl(raw_display_handle, raw_window_handle, (width, height));
-            let mut gl_canvas =
-                gl::init_gl_canvas(&gl_display, (width, height), *scale_factor.read().unwrap());
+            // // load assets
+            // let images = canvas::load_assets_to_canvas(&mut gl_canvas, assets);
 
-            // load assets
-            let images = canvas::load_assets_to_canvas(&mut gl_canvas, assets);
+            // let mut gl_context = GlCanvasContext {
+            //     gl_canvas,
+            //     gl_context,
+            //     gl_surface,
+            //     images,
+            // };
 
-            let mut gl_context = GlCanvasContext {
-                gl_canvas,
-                gl_context,
-                gl_surface,
-                images,
-            };
+            // for msg in receiver.iter() {
+            //     // exit thread
+            //     if msg == RenderMessage::Exit {
+            //         break;
+            //     }
 
-            for msg in receiver.iter() {
-                // exit thread
-                if msg == RenderMessage::Exit {
-                    break;
-                }
+            //     if *frame_dirty.read().unwrap() {
+            //         let node = node.read().unwrap();
 
-                if *frame_dirty.read().unwrap() {
-                    let node = node.read().unwrap();
+            //         let mut renderer = renderer.write().unwrap();
 
-                    let mut renderer = renderer.write().unwrap();
+            //         if renderer.is_none() {
+            //             return;
+            //         }
 
-                    if renderer.is_none() {
-                        return;
-                    }
+            //         renderer.as_mut().unwrap().render(
+            //             &node,
+            //             PixelSize { width, height },
+            //             &mut gl_context,
+            //         );
 
-                    renderer.as_mut().unwrap().render(
-                        &node,
-                        PixelSize { width, height },
-                        &mut gl_context,
-                    );
+            //         *frame_dirty.write().unwrap() = false;
 
-                    *frame_dirty.write().unwrap() = false;
-
-                    // request next frame
-                    let window = window.read();
-                    // println!("window::redraw start {:?}", do_render);
-                    window.unwrap().next_frame();
-                }
-            }
+            //         // request next frame
+            //         let window = window.read();
+            //         // println!("window::redraw start {:?}", do_render);
+            //         window.unwrap().next_frame();
+            //     }
+            // }
         })
     }
 
