@@ -1,0 +1,18 @@
+[package]
+name = "bevy_styled_widgets"
+version = "0.1.0"
+edition = "2024"
+description = "Bevy styled widgets, implements style for core widgets"
+authors = ["Akshay Raina <akshayr@mechasystems.com", "Shoaib Merchant <shoaibm@mechasystems.com>"]
+documentation = "https://docs.mecha.so"
+license = "MIT"
+repository = "https://github.com/mecha-org/mctk"
+homepage = "https://mecha.so"
+
+[features]
+default = []
+
+[dependencies]
+bevy_core_widgets = { git = "https://github.com/viridia/bevy_core_widgets.git",  rev = "cd095a162a7930eb61562bbd9823563522c6db39" }
+accesskit = "0.18.0"
+bevy = "0.16.0-dev"

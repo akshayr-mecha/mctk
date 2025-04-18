@@ -1,0 +1,20 @@
+[workspace]
+members = ["crates/*",]
+resolver = "2"
+
+[package]
+name = "bevy_mctk"
+version = "0.1.0"
+authors = ["Akshay Raina <akshayr@mechasystems.com", "Shoaib Merchant <shoaibm@mechasystems.com>"]
+documentation = "https://docs.mecha.so"
+description = "Mecha Bevy widgets toolkit"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/mecha-org/mctk"
+homepage = "https://mecha.so"
+
+[dev-dependencies]
+bevy_styled_widgets = { path = "crates/bevy_styled_widgets", version = "0.1.0", default-features = false }
+bevy = "0.16.0-dev"
+bevy_core_widgets = { git = "https://github.com/viridia/bevy_core_widgets.git",  rev = "cd095a162a7930eb61562bbd9823563522c6db39" }
+accesskit = "0.18.0"
