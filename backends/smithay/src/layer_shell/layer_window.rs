@@ -177,8 +177,8 @@ impl LayerWindow {
                                             scale_factor,
                                         } => {
                                             ui.handle_input(&Input::Motion(Motion::Mouse {
-                                                x: position.x as f32 / scale_factor as f32,
-                                                y: position.y as f32 / scale_factor as f32,
+                                                x: position.x as f32,
+                                                y: position.y as f32,
                                             }));
                                         }
                                         MouseEvent::ButtonPressed { button } => match button {
@@ -238,32 +238,32 @@ impl LayerWindow {
                                             scale_factor,
                                             ..
                                         } => ui.handle_input(&Input::Touch(TouchAction::Up {
-                                            x: position.x / scale_factor,
-                                            y: position.y / scale_factor,
+                                            x: position.x,
+                                            y: position.y,
                                         })),
                                         TouchEvent::Down {
                                             position,
                                             scale_factor,
                                             ..
                                         } => ui.handle_input(&Input::Touch(TouchAction::Down {
-                                            x: position.x / scale_factor,
-                                            y: position.y / scale_factor,
+                                            x: position.x,
+                                            y: position.y,
                                         })),
                                         TouchEvent::Motion {
                                             position,
                                             scale_factor,
                                             ..
                                         } => ui.handle_input(&Input::Touch(TouchAction::Moved {
-                                            x: position.x / scale_factor,
-                                            y: position.y / scale_factor,
+                                            x: position.x,
+                                            y: position.y,
                                         })),
                                         TouchEvent::Cancel {
                                             position,
                                             scale_factor,
                                             ..
                                         } => ui.handle_input(&Input::Touch(TouchAction::Cancel {
-                                            x: position.x / scale_factor,
-                                            y: position.y / scale_factor,
+                                            x: position.x,
+                                            y: position.y,
                                         })),
                                     },
                                 }
