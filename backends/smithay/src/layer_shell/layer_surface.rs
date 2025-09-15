@@ -486,7 +486,7 @@ impl PointerHandler for LayerShellSctkWindow {
                         x: event.position.0 as f32,
                         y: event.position.1 as f32,
                     },
-                    scale_factor: self.scale_factor,
+                    scale_factor: 2.,
                 }),
                 PointerEventKind::Press { button, .. } => {
                     if let Some(button) = convert_button(button) {
@@ -551,7 +551,7 @@ impl TouchHandler for LayerShellSctkWindow {
         if self.layer.wl_surface() != &surface {
             return;
         }
-        let scale_factor = self.scale_factor;
+        let scale_factor = 2.;
 
         // insert the touch point
         self.touch_map.insert(
@@ -585,7 +585,7 @@ impl TouchHandler for LayerShellSctkWindow {
         time: u32,
         id: i32,
     ) {
-        let scale_factor = self.scale_factor;
+        let scale_factor = 2.;
         let touch_point = match self.touch_map.remove(&id) {
             Some(touch_point) => touch_point,
             None => return,
@@ -611,7 +611,7 @@ impl TouchHandler for LayerShellSctkWindow {
         id: i32,
         position: (f64, f64),
     ) {
-        let scale_factor = self.scale_factor;
+        let scale_factor = 2.;
         let touch_point = match self.touch_map.get_mut(&id) {
             Some(touch_point) => touch_point,
             None => return,
@@ -649,7 +649,7 @@ impl TouchHandler for LayerShellSctkWindow {
     }
 
     fn cancel(&mut self, _: &Connection, _: &QueueHandle<Self>, _: &WlTouch) {
-        let scale_factor = self.scale_factor;
+        let scale_factor = 2.;
         for (id, tp) in self.touch_map.clone().into_iter() {
             let touch_point = tp.clone();
             self.send_window_event(WindowEvent::Touch(TouchEvent::Cancel {
