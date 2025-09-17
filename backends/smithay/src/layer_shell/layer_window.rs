@@ -44,6 +44,7 @@ pub struct LayerWindowParams {
     pub assets: HashMap<String, AssetParams>,
     pub svgs: HashMap<String, String>,
     pub layer_shell_opts: LayerOptions,
+    pub input_region: Option<(i32, i32, i32, i32)>,
     pub layer_tx: Option<Sender<LayerWindowMessage>>,
     pub layer_rx: Option<Channel<LayerWindowMessage>>,
 }
@@ -73,6 +74,7 @@ impl LayerWindow {
             assets,
             svgs,
             layer_shell_opts,
+            input_region,
             layer_tx,
             layer_rx,
         } = params;
@@ -84,6 +86,7 @@ impl LayerWindow {
             window_opts,
             window_info,
             layer_shell_opts,
+            input_region,
             layer_rx,
         )
         .expect("failed to create application");

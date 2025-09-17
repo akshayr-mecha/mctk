@@ -46,8 +46,10 @@ use smithay_client_toolkit::{
         WaylandSurface,
     },
 };
+use tracing::Dispatch;
 use wayland_client::protocol::{
     wl_display::WlDisplay,
+    wl_region::WlRegion,
     wl_touch::{self, WlTouch},
 };
 
@@ -101,6 +103,7 @@ impl LayerShellSctkWindow {
         window_opts: WindowOptions,
         window_info: WindowInfo,
         layer_opts: LayerOptions,
+        input_region: Option<(i32, i32, i32, i32)>,
         layer_rx: Option<Channel<LayerWindowMessage>>,
     ) -> anyhow::Result<(Self, EventLoop<'static, Self>)> {
         let conn = Connection::connect_to_env().expect("failed to connect to wayland");
@@ -144,6 +147,11 @@ impl LayerShellSctkWindow {
         layer.set_size(width, height);
         layer.set_anchor(anchor);
         layer.set_exclusive_zone(zone);
+        if let Some(ir) = input_region {
+            let region = compositor.wl_compositor().create_region(&queue_handle, ());
+            region.add(ir.0, ir.1, ir.2, ir.3);
+            layer.set_input_region(Some(&region));
+        }
 
         layer.commit();
 
@@ -672,6 +680,19 @@ impl ProvidesRegistryState for LayerShellSctkWindow {
     }
 
     registry_handlers!(OutputState, SeatState);
+}
+
+impl wayland_client::Dispatch<WlRegion, ()> for LayerShellSctkWindow {
+    fn event(
+        state: &mut Self,
+        proxy: &WlRegion,
+        event: <WlRegion as wayland_client::Proxy>::Event,
+        data: &(),
+        conn: &Connection,
+        qhandle: &QueueHandle<Self>,
+    ) {
+        todo!()
+    }
 }
 
 delegate_compositor!(LayerShellSctkWindow);
